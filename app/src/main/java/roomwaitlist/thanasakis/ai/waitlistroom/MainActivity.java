@@ -12,7 +12,6 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -121,15 +120,49 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void addDummyData(){
-        waitListDAO.insertEntry(new WaitListEntry("nikos",6,12323));
-        waitListDAO.insertEntry(new WaitListEntry("takis",7,12323));
-        waitListDAO.insertEntry(new WaitListEntry("kostas",85,12323));
+        new AsyncTask<Void, Void, Void>() {
+            @Override
+            protected Void doInBackground(Void... params) {
+                waitListDAO.insertEntry(new WaitListEntry("nikos",6,12323));
+                waitListDAO.insertEntry(new WaitListEntry("takis",7,12323));
+                waitListDAO.insertEntry(new WaitListEntry("kostas",85,12323));
+                return null;
+            }
+
+            @Override
+            protected void onPostExecute(Void a) {
+                loadEntries();
+            }
+        }.execute();
+
     }
     private void removeGuest(WaitListEntry entry) {
+        new AsyncTask<WaitListEntry, Void, Void>() {
+            @Override
+            protected Void doInBackground(WaitListEntry... params) {
+                waitListDAO.delete(params[0]);
+                return null;
+            }
 
-        waitListDAO.delete(entry);
-        mEntries.remove(entry);
-        mAdapter.notifyDataSetChanged();
+            @Override
+            protected void onPostExecute(Void a) {
+                loadEntries();
+            }
+        }.execute(entry);
+    }
+    private void addGuest(WaitListEntry entry) {
+        new AsyncTask<WaitListEntry, Void, Void>() {
+            @Override
+            protected Void doInBackground(WaitListEntry... params) {
+                waitListDAO.insertEntry(params[0]);
+                return null;
+            }
+
+            @Override
+            protected void onPostExecute(Void a) {
+                loadEntries();
+            }
+        }.execute(entry);
     }
 
     @OnClick(R.id.add_to_waitlist_button)
@@ -148,11 +181,7 @@ public class MainActivity extends AppCompatActivity {
         }
         WaitListEntry tempEntry = new WaitListEntry(mNewGuestNameEditText.getText().toString(), partySize, System.currentTimeMillis());
         // Add guest info to mDb
-        waitListDAO.insertEntry(tempEntry);
-
-        // Update the cursor in the adapter to trigger UI to display the new list
-        mEntries.add(tempEntry);
-        mAdapter.notifyDataSetChanged();
+        addGuest(tempEntry);
 
         //clear UI text fields
         mNewPartySizeEditText.clearFocus();
